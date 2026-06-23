@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import type { DataSource } from "../../../src"
+import type { DataSource, FindOptionsWhere } from "../../../src"
 import { TypeORMError } from "../../../src"
 import {
     closeTestingConnections,
@@ -8,6 +8,12 @@ import {
 } from "../../utils/test-utils"
 import { Category } from "./entity/Category"
 import { Post } from "./entity/Post"
+
+function invalidPostWhere(
+    where: Record<string, null | undefined>,
+): FindOptionsWhere<Post> {
+    return where as unknown as FindOptionsWhere<Post>
+}
 
 describe("entity manager > invalidWhereValuesBehavior defaults to throw", () => {
     let dataSources: DataSource[]
@@ -42,9 +48,13 @@ describe("entity manager > invalidWhereValuesBehavior defaults to throw", () => 
             await prepareData(connection)
 
             try {
-                await connection.manager.update(Post, { text: null } as any, {
-                    title: "Updated",
-                })
+                await connection.manager.update(
+                    Post,
+                    invalidPostWhere({ text: null }),
+                    {
+                        title: "Updated",
+                    },
+                )
                 expect.fail("Expected error")
             } catch (error) {
                 expect(error).to.be.instanceOf(TypeORMError)
@@ -60,7 +70,7 @@ describe("entity manager > invalidWhereValuesBehavior defaults to throw", () => 
             try {
                 await connection.manager.update(
                     Post,
-                    { text: undefined } as any,
+                    invalidPostWhere({ text: undefined }),
                     { title: "Updated" },
                 )
                 expect.fail("Expected error")
